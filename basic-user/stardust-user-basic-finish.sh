@@ -43,9 +43,9 @@
 # capture stdout when running the container.
 
 if test "$FORCEPWD" = ""; then
-        export NEWPWD=`pwgen 16 1`
+        NEWPWD=`pwgen 16 1`
 else
-        export NEWPWD=${FORCEPWD}
+        NEWPWD=${FORCEPWD}
 fi
 
 echo "STARDUST-DOCKER: Setting container root password to $NEWPWD"
