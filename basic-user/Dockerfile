@@ -73,6 +73,7 @@ RUN apt-get -y update && apt-get -y install \
         libwandio1-dev \
         libyaml-dev \
         libzmq3-dev \
+        nano \
         openssh-server \
         passwd \
         pkg-config \
@@ -101,7 +102,7 @@ RUN sed -i "s/#Port 22/Port ${sshport}/" /etc/ssh/sshd_config
 # Not sure what this does, but the guide I'm following has it
 RUN echo "export VISIBLE=now" >> /etc/profile
 
-# TODO replace with a wget from a public location
+# TODO replace with a wget from a public location?
 COPY stardust-user-basic-finish.sh /usr/local/sbin/
 
 EXPOSE $sshport
