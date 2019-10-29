@@ -49,6 +49,10 @@ RUN echo "deb https://dl.bintray.com/wand/libflowmanager $(lsb_release -sc) main
 
 RUN curl --silent "https://bintray.com/user/downloadSubjectPublicKey?username=wand" | apt-key add -
 
+RUN echo "deb https://pkg.caida.org/os/ubuntu $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/caida.list
+
+RUN curl -so /etc/apt/trusted.gpg.d/caida.gpg https://pkg.caida.org/os/ubuntu/keyring.gpg
+
 RUN apt-get -y update && apt-get -y install \
         autoconf \
         automake \
