@@ -35,6 +35,7 @@
 
 FROM ubuntu:bionic
 
+ENV DEBIAN_FRONTEND=noninteractive
 ARG userhome="/home/stardust-user"
 ARG sshport=22
 
@@ -83,6 +84,7 @@ RUN apt-get -y update && apt-get -y install \
         pkg-config \
         pwgen \
         python3 \
+        python-swiftclient \
         screen \
         strace \
         tcpdump \
