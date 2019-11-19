@@ -5,44 +5,31 @@ Dockerfiles for the STARDUST project
 
 TODO: turn this into some scripts for easy deployment
 
-Install docker-ce
+1. Run prepare-host.sh on the VM that will be hosting the containers.
 
-Put daemon.json into /etc/docker/ -- this will prevent containers from talking to each other
 
-Restart docker service
+2. Create user container (the sysctls mean that the container interfaces won't drop
+multicast because it has a source address that doesn't match the interface subnet):
 
-Create a network specifically for receiving multicast
-(the enable_icc option is probably unnecessary, but I've added it to be safe):
+    docker run --sysctl net.ipv4.conf.all.rp_filter=0 --sysctl net.ipv4.conf.default.rp_filter=0 -d -P --rm -it --name <containername> <stardust container image>
 
-    docker network create -o "com.docker.network.driver.mtu"="9000" -o "com.docker.network.bridge.enable_icc"="false" ndag
-
-Figure out the virtual interface name assigned to your new network.
-It'll be something awkward like br-acb9a90e6770.
-
-Install latest release of smcroute (not the packaged version which is
-way out of date!). https://github.com/troglobit/smcroute/releases
-
-Put smcroute.conf into /etc/
-
-Replace "docker0" in /etc/smcroute.conf with the virtual interface name for the ndag network
-
-Restart smcroute service
-
-    sudo iptables --policy FORWARD ACCEPT           # (may need to refine this a bit?)
-
-Create user container:
-
-    docker run -d -P --rm -it --name <containername> <stardust container image>
-
-Grab password from logs:
+3. Grab container root password from logs:
 
     docker logs <containername>
 
-Add container to ndag network
+4. Add container to ndag network:
 
     docker network connect ndag <containername>
 
-Make sure you get useful nDAG traffic:
+5. Get the port that your container is listening on for SSH:
+
+    docker port <containername>
+
+6. SSH into the new container:
+
+    ssh root@172.17.0.1 -p <sshport>
+
+7. Make sure you get useful nDAG traffic:
 
     tracepktdump -c 5 ndag:eth1,225.44.0.1,44000
 
