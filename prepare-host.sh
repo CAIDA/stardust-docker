@@ -33,13 +33,9 @@ cp daemon.json /etc/docker/
 service docker restart
 
 # Create a network specifically for pushing multicast into containers
-# The 'newgrp' just makes sure that we are in the docker group to perform
-# this operation.
-newgrp docker
 docker network create -o "com.docker.network.driver.mtu"="9000" \
     -o "com.docker.network.bridge.enable_icc"="false" \
     -o "com.docker.network.bridge.name"="br_ndag" ndag
-exit
 
 # Install a recent release of smcroute -- the packaged versions are far too
 # out of date
@@ -55,6 +51,7 @@ make -j4 && make install-strip
 cd ${PWD}
 cp smcroute.conf /etc/
 
+systemctl enable docker
 systemctl enable smcroute
 service smcroute start
 
