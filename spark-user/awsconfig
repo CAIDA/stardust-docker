@@ -1,0 +1,7 @@
+[plugins]
+endpoint = awscli_plugin_endpoint
+
+[default]
+s3 =
+  endpoint_url = https://hermes.caida.org
+

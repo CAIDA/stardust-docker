@@ -1,0 +1,22 @@
+Building the docker image
+==========================
+
+IMPORTANT:
+
+Before building this Docker image, you'll need to run the following (in the
+directory where the Dockerfile is located):
+
+        wget https://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-without-hadoop.tgz
+        wget https://www-us.apache.org/dist/hadoop/common/hadoop-2.10.0/hadoop-2.10.0.tar.gz
+
+wget + https + docker don't play nicely together, so it ended up being easier
+to just get docker to copy the .tgz files into the image directly.
+
+
+
+Running a container
+===================
+
+The user will need to update their assigned S3 access key and secret within
+/root/spark-2.4.4/conf/spark-defaults.conf before trying to use spark
+to access any Swift data files.
