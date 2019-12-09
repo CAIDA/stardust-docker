@@ -54,29 +54,17 @@ RUN echo "deb https://pkg.caida.org/os/ubuntu $(lsb_release -sc) main" | tee /et
 RUN curl -so /etc/apt/trusted.gpg.d/caida.gpg https://pkg.caida.org/os/ubuntu/keyring.gpg
 
 RUN apt-get -y update && apt-get -y install \
-        autoconf \
-        automake \
-        autotools-dev \
-        build-essential \
         ca-certificates \
         emacs \
-        gdb \
         git \
         grep \
         iproute2 \
         less \
-        libavro-dev \
-        libgoogle-perftools-dev \
-        libjansson-dev \
-        libjudy-dev \
-        librdkafka-dev \
         libtool \
         libtrace4-tools \
         libtrace4-dev \
         libpacketdump4-dev \
         libwandio1-dev \
-        libyaml-dev \
-        libzmq3-dev \
         nano \
         openjdk-8-jdk \
         openssh-server \
@@ -90,29 +78,27 @@ RUN apt-get -y update && apt-get -y install \
         strace \
         tcpdump \
         unzip \
-        uthash-dev \
-        valgrind \
         vim \
-        wandio1-tools
-
-RUN mkdir /var/run/sshd
-
-RUN pip3 install awscli awscli-plugin-endpoint boto3
+        wandio1-tools \
+        && rm -rf /var/lib/apt/lists/*
 
 COPY spark-2.4.4-bin-without-hadoop.tgz ${userhome}/
-
-RUN tar -xvzf spark-2.4.4-bin-without-hadoop.tgz
-
 COPY hadoop-2.10.0.tar.gz ${userhome}/
-RUN tar -xvzf hadoop-2.10.0.tar.gz
-
-RUN cp ./hadoop-2.10.0/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar spark-2.4.4-bin-without-hadoop/jars/
-
-RUN cp ./hadoop-2.10.0/share/hadoop/tools/lib/hadoop-aws-2.10.0.jar spark-2.4.4-bin-without-hadoop/jars/
-
-RUN mv spark-2.4.4-bin-without-hadoop/ spark-2.4.4
-
 COPY javahome.sh /etc/profile.d/
+COPY spark-defaults.conf ${userhome}/spark-2.4.4/conf/
+COPY spark-env.sh ${userhome}/spark-2.4.4/conf/
+COPY awsconfig /root/.aws/config
+COPY stardust-user-spark-finish.sh /usr/local/sbin/
+
+# "Install" Spark, Hadoop and awscli
+RUN mkdir /var/run/sshd && \
+    pip3 install awscli awscli-plugin-endpoint boto3 && \
+    tar -xvzf spark-2.4.4-bin-without-hadoop.tgz && \
+    tar -xvzf hadoop-2.10.0.tar.gz && \
+    cp ./hadoop-2.10.0/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar spark-2.4.4-bin-without-hadoop/jars/ && \
+    cp ./hadoop-2.10.0/share/hadoop/tools/lib/hadoop-aws-2.10.0.jar spark-2.4.4-bin-without-hadoop/jars/ && \
+    mv spark-2.4.4-bin-without-hadoop/ spark-2.4.4 && \
+    rm ${userhome}/hadoop-2.10.0.tar.gz ${userhome}/spark-2.4.4-bin-without-hadoop.tgz
 
 # Allow user to log in as root
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -126,16 +112,8 @@ RUN sed -i "s/#Port 22/Port ${sshport}/" /etc/ssh/sshd_config
 # Not sure what this does, but the guide I'm following has it
 RUN echo "export VISIBLE=now" >> /etc/profile
 
-RUN mkdir /root/.aws/
-COPY spark-defaults.conf ${userhome}/spark-2.4.4/conf/
-COPY spark-env.sh ${userhome}/spark-2.4.4/conf/
-COPY awsconfig /root/.aws/config
-
+# Make sure Spark can find our hadoop .jars
 RUN sed -i "s@/root/@${userhome}/@" ${userhome}/spark-2.4.4/conf/spark-env.sh
-RUN rm ${userhome}/hadoop-2.10.0.tar.gz ${userhome}/spark-2.4.4-bin-without-hadoop.tgz
-
-# TODO replace with a wget from a public location?
-COPY stardust-user-spark-finish.sh /usr/local/sbin/
 
 EXPOSE $sshport
 
