@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Run with `sudo -H` to avoid errors when installing dockersh
-
 REALUSER=`who am i | awk '{print $1}'`
 SMCROUTE_VER=2.4.4
-PWD=`pwd`
+SAVEDPWD=`pwd`
 
 # Install pre-requisites
 apt-get update && apt-get install -y apt-transport-https \
@@ -15,6 +13,7 @@ apt-get update && apt-get install -y apt-transport-https \
     libcap-dev \
     libsystemd-dev \
     pkg-config \
+    python3-pip \
     software-properties-common
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -35,10 +34,11 @@ cp daemon.json /etc/docker/
 service docker restart
 
 # Install dockersh
-git clone https://github.com/sleeepyjack/dockersh
-cd dockersh && ./install.sh
+#git clone https://github.com/sleeepyjack/dockersh
+git clone https://github.com/salcock/dockersh
+cd dockersh && sudo -H ./install.sh
 
-cd ${PWD}
+cd ${SAVEDPWD}
 cp dockersh.ini /etc/
 
 # Create a network specifically for pushing multicast into containers
@@ -48,7 +48,7 @@ docker network create -o "com.docker.network.driver.mtu"="9000" \
 
 # Install a recent release of smcroute -- the packaged versions are far too
 # out of date
-cd ${PWD}
+cd ${SAVEDPWD}
 wget https://github.com/troglobit/smcroute/releases/download/${SMCROUTE_VER}/smcroute-${SMCROUTE_VER}.tar.gz
 
 tar -xvzf smcroute-${SMCROUTE_VER}.tar.gz && cd smcroute-${SMCROUTE_VER}/
@@ -58,7 +58,7 @@ tar -xvzf smcroute-${SMCROUTE_VER}.tar.gz && cd smcroute-${SMCROUTE_VER}/
 make -j4 && make install-strip
 
 # Configure smcroute to forward our multicast onto the br_ndag network
-cd ${PWD}
+cd ${SAVEDPWD}
 cp smcroute.conf /etc/
 
 systemctl enable docker
