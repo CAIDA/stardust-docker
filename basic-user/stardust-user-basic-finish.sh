@@ -48,8 +48,21 @@ else
         NEWPWD=${FORCEPWD}
 fi
 
-echo "STARDUST-DOCKER: Setting container root password to $NEWPWD"
-echo "root:${NEWPWD}" | chpasswd
+groupadd --gid "${HOST_USER_GID}" "${HOST_USER_NAME}"
+useradd \
+      --uid ${HOST_USER_ID} \
+      --gid ${HOST_USER_GID} \
+      --create-home \
+      --shell /bin/bash \
+      ${HOST_USER_NAME}
+usermod -aG sudo ${HOST_USER_NAME}
 
-# Finish up by starting the SSH server so the user can log in
-/usr/sbin/sshd -D
+chown -R ${HOST_USER_NAME}:${HOST_USER_NAME} /home/${HOST_USER_NAME}
+chown -R ${HOST_USER_NAME}:${HOST_USER_NAME} /storage
+
+echo "${HOST_USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-stardust-users
+
+echo "STARDUST-DOCKER: Setting password for ${HOST_USER_NAME} to $NEWPWD"
+echo "${HOST_USER_NAME}:${NEWPWD}" | chpasswd
+
+exec su - "${HOST_USER_NAME}"

@@ -36,13 +36,9 @@
 FROM ubuntu:bionic
 
 ENV DEBIAN_FRONTEND=noninteractive
-ARG userhome="/home/stardust-user"
-ARG sshport=22
-
-WORKDIR $userhome
 
 RUN apt-get -y update && apt-get -y install apt-transport-https \
-                curl lsb-release gnupg
+               curl lsb-release gnupg sudo
 
 RUN echo "deb https://dl.bintray.com/wand/general $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/wand.list
 RUN echo "deb https://dl.bintray.com/wand/libtrace $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/wand.list
@@ -79,7 +75,6 @@ RUN apt-get -y update && apt-get -y install \
         libyaml-dev \
         libzmq3-dev \
         nano \
-        openssh-server \
         passwd \
         pkg-config \
         pwgen \
@@ -94,24 +89,15 @@ RUN apt-get -y update && apt-get -y install \
         vim \
         wandio1-tools
 
-RUN mkdir /var/run/sshd
+RUN git clone https://github.com/CAIDA/corsaro3 && cd corsaro3 && git checkout v2 && git submodule init && git submodule update
+RUN cd corsaro3 && autoreconf -vfi && ./configure --with-slash-eight=44 --enable-debug && make && make install && ldconfig
 
-# Allow user to log in as root
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-
-# Prevent user from being kicked off after login
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
-# If we're using a custom port, put it in the sshd config
-RUN sed -i "s/#Port 22/Port ${sshport}/" /etc/ssh/sshd_config
-
-# Not sure what this does, but the guide I'm following has it
-RUN echo "export VISIBLE=now" >> /etc/profile
+# Remove 'corsaro' binary, as we don't really want people using this to create
+# data files with a legacy format
+RUN rm /usr/local/bin/corsaro
 
 # TODO replace with a wget from a public location?
 COPY stardust-user-basic-finish.sh /usr/local/sbin/
-
-EXPOSE $sshport
 
 # This will generate a random root password and start the ssh daemon
 CMD ["/usr/local/sbin/stardust-user-basic-finish.sh"]

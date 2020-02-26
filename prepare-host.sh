@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Run with `sudo -H` to avoid errors when installing dockersh
+
 REALUSER=`who am i | awk '{print $1}'`
 SMCROUTE_VER=2.4.4
 PWD=`pwd`
@@ -32,6 +34,13 @@ cp daemon.json /etc/docker/
 
 service docker restart
 
+# Install dockersh
+git clone https://github.com/sleeepyjack/dockersh
+cd dockersh && ./install.sh
+
+cd ${PWD}
+cp dockersh.ini /etc/
+
 # Create a network specifically for pushing multicast into containers
 docker network create -o "com.docker.network.driver.mtu"="9000" \
     -o "com.docker.network.bridge.enable_icc"="false" \
@@ -39,6 +48,7 @@ docker network create -o "com.docker.network.driver.mtu"="9000" \
 
 # Install a recent release of smcroute -- the packaged versions are far too
 # out of date
+cd ${PWD}
 wget https://github.com/troglobit/smcroute/releases/download/${SMCROUTE_VER}/smcroute-${SMCROUTE_VER}.tar.gz
 
 tar -xvzf smcroute-${SMCROUTE_VER}.tar.gz && cd smcroute-${SMCROUTE_VER}/
