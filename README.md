@@ -6,7 +6,7 @@ Dockerfiles for the STARDUST project
 Before adding any containers, run `prepare-host.sh` on the VM that will be
 hosting the containers.
 
-        sudo -H ./prepare-host.sh
+        sudo ./prepare-host.sh
 
 ### Creating a new container user
 
