@@ -23,6 +23,10 @@ add-apt-repository \
 
 apt-get update
 
+# Create directory for storing the "volumes" for our containers
+mkdir -p /stardust-volumes/
+mkdir -p /mnt/stardust-docker/
+
 # Install docker-ce
 apt-get install -y docker-ce docker-ce-cli containerd.io
 
