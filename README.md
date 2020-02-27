@@ -12,23 +12,28 @@ hosting the containers.
 
 To create and start a user container on the VM, run
 
-	sudo ./create-stardust-user.sh <username> [ <password> ]
+	sudo ./create-stardust-user.sh -u <username> [ -p <password> ]
+                [ -k sshpubkeyfile ] [ -V volumesize ]
 
 If password is not set, a random one will be generated and written to
 the terminal once the user has been created.
+
+If the path to an SSH public key (e.g. `id_rsa.pub`) is passed in using the
+`-k` option, then that public key will be added to the new user's authorized
+SSH keys and they will be able to log in to their container using the
+corresponding private key. If no key file is provided, then they will be
+limited to password auth only.
 
 By default, the user's container will be the caida/stardust-basic:latest
 image. If a user requires a different image, this can be specified by
 modifying `/etc/dockersh.ini` to add a custom section for that user. The
 default image can also be changed by editing this file.
 
-The newly created user will also be assigned a 100GB volume for their
+The newly created user will also be assigned a volume for their
 persistent storage. This volume is implemented as a file on disk, which is
 configured as an ext4 file system. You can change the default volume size
-by setting the `STARDUSTVOLUMESIZE` environment variable to the desired
-volume size (in megabytes). Note that you will probably need to pass the
-`-E` flag to sudo to ensure this environment variable is passed through to
-the root shell that is running the user creation script.
+by setting the `-V` argument to the desired volume size (in megabytes).
+The default volume size is 100 GB.
 
 To constrain the amount of CPU time and memory for the user's container,
 you can set the `cpulimit` and `memhardlimit` configuration options in
@@ -44,17 +49,15 @@ VM.
 ### Accessing containers
 
 Once the user exists, they can reach their container simply by sshing into
-the VM that the user was created on, using the username and password from
-the ./create-vm-user.sh script. dockersh will automatically put the user
-directly into their container, skipping the host VM.
+the VM that the user was created on. dockersh will automatically put the user
+directly into their container, skipping the host VM. Key authentication will
+be preferred if available, otherwise SSH will fall back to password auth.
 
 If the container does not exist, it will be created using the latest version
 of the base image.
 
 Users can copy files to and from their container by using scp on the limbo
 gateway box.
-
-TODO experiment with SSH keys to replace passwords for access
 
 ### Using the container
 Each user has a volume created for persistent storage -- this will be mounted
