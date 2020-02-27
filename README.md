@@ -30,6 +30,17 @@ volume size (in megabytes). Note that you will probably need to pass the
 `-E` flag to sudo to ensure this environment variable is passed through to
 the root shell that is running the user creation script.
 
+To constrain the amount of CPU time and memory for the user's container,
+you can set the `cpulimit` and `memhardlimit` configuration options in
+`/etc/dockersh.ini`. The cpulimit is specified in terms of number of CPUs
+(e.g. a value of 1.5 will limit the user to approximately 1.5 cores of CPU
+time) and is a soft limit. The memhardlimit can be specified as a
+number followed by a units character ('b', 'k', 'm', or 'g'), e.g. `4g` will
+limit the user to 4 GB of memory. The OOM killer will begin halting processes
+in their container once the memory limit is exceeded. If the limits are not
+specified, then the user will be able to use the full resources of their host
+VM.
+
 ### Accessing containers
 
 Once the user exists, they can reach their container simply by sshing into
