@@ -36,10 +36,6 @@
 FROM ubuntu:bionic
 
 ENV DEBIAN_FRONTEND=noninteractive
-ARG userhome="/root"
-ARG sshport=22
-
-WORKDIR $userhome
 
 RUN apt-get -y update && apt-get -y install apt-transport-https \
                 curl lsb-release gnupg sudo wget
@@ -98,6 +94,14 @@ RUN pip3 install awscli awscli-plugin-endpoint boto3 && \
     cp ./hadoop-2.10.0/share/hadoop/tools/lib/hadoop-aws-2.10.0.jar spark-2.4.4-bin-without-hadoop/jars/ && \
     mv spark-2.4.4-bin-without-hadoop/ spark-2.4.4 && \
     rm ${userhome}/hadoop-2.10.0.tar.gz ${userhome}/spark-2.4.4-bin-without-hadoop.tgz
+
+# Install corsaro2 tools, just in case
+RUN git clone https://github.com/CAIDA/corsaro3 && cd corsaro3 && git checkout v2 && git submodule init && git submodule update
+RUN cd corsaro3 && autoreconf -vfi && ./configure --with-slash-eight=44 --enable-debug && make && make install && ldconfig
+
+# Remove 'corsaro' binary, as we don't really want people using this to create
+# data files with a legacy format
+RUN rm /usr/local/bin/corsaro
 
 # Make sure Spark can find our hadoop .jars
 RUN sed -i "s@/root/@${userhome}/@" ${userhome}/spark-2.4.4/conf/spark-env.sh
