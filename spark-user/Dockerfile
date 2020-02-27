@@ -42,7 +42,7 @@ ARG sshport=22
 WORKDIR $userhome
 
 RUN apt-get -y update && apt-get -y install apt-transport-https \
-                curl lsb-release gnupg wget
+                curl lsb-release gnupg sudo wget
 
 RUN echo "deb https://dl.bintray.com/wand/general $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/wand.list
 RUN echo "deb https://dl.bintray.com/wand/libtrace $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/wand.list
@@ -91,8 +91,7 @@ COPY awsconfig /root/.aws/config
 COPY stardust-user-spark-finish.sh /usr/local/sbin/
 
 # "Install" Spark, Hadoop and awscli
-RUN mkdir /var/run/sshd && \
-    pip3 install awscli awscli-plugin-endpoint boto3 && \
+RUN pip3 install awscli awscli-plugin-endpoint boto3 && \
     tar -xvzf spark-2.4.4-bin-without-hadoop.tgz && \
     tar -xvzf hadoop-2.10.0.tar.gz && \
     cp ./hadoop-2.10.0/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar spark-2.4.4-bin-without-hadoop/jars/ && \
@@ -100,22 +99,8 @@ RUN mkdir /var/run/sshd && \
     mv spark-2.4.4-bin-without-hadoop/ spark-2.4.4 && \
     rm ${userhome}/hadoop-2.10.0.tar.gz ${userhome}/spark-2.4.4-bin-without-hadoop.tgz
 
-# Allow user to log in as root
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-
-# Prevent user from being kicked off after login
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
-# If we're using a custom port, put it in the sshd config
-RUN sed -i "s/#Port 22/Port ${sshport}/" /etc/ssh/sshd_config
-
-# Not sure what this does, but the guide I'm following has it
-RUN echo "export VISIBLE=now" >> /etc/profile
-
 # Make sure Spark can find our hadoop .jars
 RUN sed -i "s@/root/@${userhome}/@" ${userhome}/spark-2.4.4/conf/spark-env.sh
-
-EXPOSE $sshport
 
 # This will generate a random root password and start the ssh daemon
 CMD ["/usr/local/sbin/stardust-user-spark-finish.sh"]
