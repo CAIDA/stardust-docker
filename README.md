@@ -115,3 +115,16 @@ After doing this, the user will receive a clean container (of the latest
 build for the base image) when they next log in to the host VM. Persistent
 storage will remain as it was, but /home/ will be empty again and all installed
 software that was not part of the base image will be gone.
+
+### Modifying images and uploading to Docker Hub
+
+To build the docker image:
+```
+# from within a clone of the stardust-docker repo
+docker build --no-cache -t caida/stardust-spark spark-user/
+```
+
+To upload to docker hub (after running `docker login`):
+```
+docker push caida/stardust-spark:latest
+```
