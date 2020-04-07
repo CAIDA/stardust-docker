@@ -57,8 +57,6 @@ useradd \
       ${HOST_USER_NAME}
 usermod -aG sudo ${HOST_USER_NAME}
 
-mv /opt/docker-install/install-stardust-pyspark.sh /home/${HOST_USER_NAME}/
-
 tail -n +2 /etc/profile.d/javahome.sh >> /home/${HOST_USER_NAME}/.bashrc
 chown -R ${HOST_USER_NAME}:${HOST_USER_NAME} /home/${HOST_USER_NAME}
 chown -R ${HOST_USER_NAME}:${HOST_USER_NAME} /storage
