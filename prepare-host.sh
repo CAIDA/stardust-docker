@@ -9,6 +9,7 @@ apt-get update && apt-get install -y apt-transport-https \
     automake autoconf libtool \
     ca-certificates \
     curl \
+    pwgen \
     gnupg-agent \
     libcap-dev \
     libsystemd-dev \
@@ -31,6 +32,10 @@ mkdir -p /mnt/stardust-docker/
 apt-get install -y docker-ce docker-ce-cli containerd.io
 
 usermod -aG docker ${REALUSER}
+echo "${REALUSER} has been added to the docker group.  Before you do any docker"
+echo "operations as your user, be sure to re-ssh in to pick up this group."
+echo "This is NOT NEEDED to complete this or the subsequent create-stardust-user.sh operations"
+echo "as those are done using sudo and this group is not needed for that."
 
 # Enforce no communication between containers on the same host
 cp daemon.json /etc/docker/
@@ -44,6 +49,15 @@ cd dockersh && sudo -H ./install.sh
 
 cd ${SAVEDPWD}
 cp dockersh.ini /etc/
+
+# pull stardust docker image for use in dockersh
+# as this becomes more of a user management issue, with more images
+# we might want to pull this out and put in the user mgmt scripts
+# to save storage ( i.e. they only pull images they need )
+#
+# also.. it may be a bug in dockersh that it doesn't pull images.
+# in which case this can be removed
+docker pull caida/stardust-basic
 
 # Create a network specifically for pushing multicast into containers
 docker network create -o "com.docker.network.driver.mtu"="9000" \
