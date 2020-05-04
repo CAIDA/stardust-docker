@@ -57,6 +57,15 @@ useradd \
       ${HOST_USER_NAME}
 usermod -aG sudo ${HOST_USER_NAME}
 
+sed -i "s/SPARK_DRIVER_HOST=localhost/SPARK_DRIVER_HOST=${HOST_IP_ADDRESS}/" \
+        /etc/profile.d/javahome.sh
+sed -i "s/SPARK_DRIVER_PORT=5001/SPARK_DRIVER_PORT=${SPARK_DRIVER_PORT}/" \
+        /etc/profile.d/javahome.sh
+sed -i "s/SPARK_BLOCKMGR_PORT=5003/SPARK_BLOCKMGR_PORT=${SPARK_BLOCK_PORT}/" \
+        /etc/profile.d/javahome.sh
+sed -i "s/SPARK_UI_PORT=5002/SPARK_UI_PORT=${SPARK_UI_PORT}/" \
+        /etc/profile.d/javahome.sh
+
 tail -n +2 /etc/profile.d/javahome.sh >> /home/${HOST_USER_NAME}/.bashrc
 chown -R ${HOST_USER_NAME}:${HOST_USER_NAME} /home/${HOST_USER_NAME}
 chown -R ${HOST_USER_NAME}:${HOST_USER_NAME} /storage
