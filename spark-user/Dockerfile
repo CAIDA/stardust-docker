@@ -92,6 +92,9 @@ COPY hadoop-2.10.0.tar.gz ${builddir}/
 COPY javahome.sh /etc/profile.d/
 COPY awsconfig /root/.aws/config
 COPY stardust-user-spark-finish.sh /usr/local/sbin/
+COPY pyspark.conf /root/
+COPY submit-pyspark.sh /usr/local/sbin/
+COPY README.Stardust /root/
 
 # "Install" Spark, Hadoop and awscli
 
