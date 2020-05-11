@@ -40,6 +40,10 @@ echo "as those are done using sudo and this group is not needed for that."
 # Enforce no communication between containers on the same host
 cp daemon.json /etc/docker/
 
+# Lower container MTU, otherwise pip3 installs will fail regularly
+mkdir -p /etc/systemd/system/docker.service.d/
+cp fixmtu.conf /etc/systemd/system/docker.service.d/
+
 service docker restart
 
 # Install dockersh

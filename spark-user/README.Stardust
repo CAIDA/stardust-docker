@@ -1,0 +1,85 @@
+INITIAL CONFIGURATION STEP (IMPORTANT!)
+========================================
+
+Make sure you follow this step *before* trying to submit any Spark jobs
+using this container:
+
+   Configure Spark with your EC2 credentials (which should have been given
+   to you by whoever created your container in the first place).
+
+   There are two keys that you need to provide: the access key and the
+   secret key. Use an editor to modify the Spark config file (such as the
+   'vim' example given below).
+
+       sudo vim ${SPARK_HOME}/conf/spark-defaults.conf
+
+   Replace "ACCESSKEY" with your access key and "SECRETKEY" with your
+   secret key.
+
+   Save the config file and exit your editor.
+
+
+PREPARING YOUR JOB
+==================
+
+You can tweak the resources used by each executor and the driver by modifying
+the contents of ${HOME}/.stardust/pyspark.conf.
+
+SPARK_EXEC_NUM = the number of simultaneous tasks that Spark should run to
+complete your analysis (executors, in Spark terminology). This should be no
+greater than the total number of cores that you have available on the Spark
+cluster. Each executor is currently hard-coded to use a single core.
+
+SPARK_EXEC_MEM = the amount of memory to assign to each Spark executor. This
+value multiplied by SPARK_EXEC_NUM must be less than the total amount of
+available memory on the Spark cluster. If your tasks are failing due to out
+of memory errors, you may need to increase this value and decrease the number
+of executors.
+
+SPARK_DRIVER_MEM = the amount of memory to use on your container for collating
+the results produced by the Spark cluster. This shouldn't exceed the total
+amount of memory assigned to your container, obviously, and probably should
+be at least a little bit less than that amount.
+
+
+Using the Stardust module to write your script
+==============================================
+
+We have provided you with a Python module that implements classes that
+can perform common types of queries and analysis on the Stardust data,
+using Spark.
+
+The capabilities of the module include:
+ * getting all flowtuples within a specified time range
+ * running raw SQL queries against a set of flowtuples
+ * filtering a set of flowtuples based on matching a IP prefix
+ * find the top N source countries, destination ports (or any other
+   flow property) that are associated with a set of flowtuples
+ * generate time series of unique source IPs, unique dest IPs,
+   unique source ASNs, packet counts and total bytes for a set of
+   flowtuples (i.e. replicating the corsarotrace report plugin)
+ * filtering a set of flowtuples to only those that match a series
+   of specified properties.
+
+The module should already be installed on your container; simply use
+`import stardust` to load the module into your Python environment.
+
+See https://github.com/CAIDA/stardust-tools/tree/master/pyspark and
+https://github.com/CAIDA/stardust-tools/wiki for documentation on how to
+write Python code using the Stardust module for pyspark.
+
+
+SUBMITTING YOUR JOB
+===================
+
+   submit-pyspark.sh spark://<spark master IP>:<spark master port> yourscript.py
+
+The Spark master IP and port will be provided to you by whoever created your
+container.
+
+Note that Spark can be very verbose with log messages on standard error, so
+you may wish to redirect that to a file (not /dev/null, just in case we need
+to debug an error!).
+
+
+

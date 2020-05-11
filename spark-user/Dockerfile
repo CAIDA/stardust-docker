@@ -35,7 +35,12 @@
 
 FROM ubuntu:bionic
 
+ARG builddir=/opt/docker-install/
+ARG sparkver=2.4.5
 ENV DEBIAN_FRONTEND=noninteractive
+
+RUN mkdir -p ${builddir}
+WORKDIR ${builddir}
 
 RUN apt-get -y update && apt-get -y install apt-transport-https \
                 curl lsb-release gnupg sudo wget
@@ -50,6 +55,10 @@ RUN echo "deb https://pkg.caida.org/os/ubuntu $(lsb_release -sc) main" | tee /et
 RUN curl -so /etc/apt/trusted.gpg.d/caida.gpg https://pkg.caida.org/os/ubuntu/keyring.gpg
 
 RUN apt-get -y update && apt-get -y install \
+        autoconf \
+        automake \
+        autotools-dev \
+        build-essential \
         ca-certificates \
         emacs \
         git \
@@ -78,22 +87,33 @@ RUN apt-get -y update && apt-get -y install \
         wandio1-tools \
         && rm -rf /var/lib/apt/lists/*
 
-COPY spark-2.4.4-bin-without-hadoop.tgz ${userhome}/
-COPY hadoop-2.10.0.tar.gz ${userhome}/
+COPY spark-${sparkver}-bin-without-hadoop.tgz ${builddir}/
+COPY hadoop-2.10.0.tar.gz ${builddir}/
 COPY javahome.sh /etc/profile.d/
-COPY spark-defaults.conf ${userhome}/spark-2.4.4/conf/
-COPY spark-env.sh ${userhome}/spark-2.4.4/conf/
 COPY awsconfig /root/.aws/config
 COPY stardust-user-spark-finish.sh /usr/local/sbin/
+COPY pyspark.conf /root/
+COPY submit-pyspark.sh /usr/local/sbin/
+COPY README.Stardust /root/
 
 # "Install" Spark, Hadoop and awscli
-RUN pip3 install awscli awscli-plugin-endpoint boto3 && \
-    tar -xvzf spark-2.4.4-bin-without-hadoop.tgz && \
-    tar -xvzf hadoop-2.10.0.tar.gz && \
-    cp ./hadoop-2.10.0/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar spark-2.4.4-bin-without-hadoop/jars/ && \
-    cp ./hadoop-2.10.0/share/hadoop/tools/lib/hadoop-aws-2.10.0.jar spark-2.4.4-bin-without-hadoop/jars/ && \
-    mv spark-2.4.4-bin-without-hadoop/ spark-2.4.4 && \
-    rm ${userhome}/hadoop-2.10.0.tar.gz ${userhome}/spark-2.4.4-bin-without-hadoop.tgz
+
+RUN tar -xvzf ${builddir}/spark-${sparkver}-bin-without-hadoop.tgz && \
+    tar -xvzf ${builddir}/hadoop-2.10.0.tar.gz && \
+   cp ${builddir}/hadoop-2.10.0/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar ${builddir}/spark-${sparkver}-bin-without-hadoop/jars/ && \
+    cp ${builddir}/hadoop-2.10.0/share/hadoop/tools/lib/hadoop-aws-2.10.0.jar ${builddir}/spark-${sparkver}-bin-without-hadoop/jars/ && \
+    mv ${builddir}/spark-${sparkver}-bin-without-hadoop/ ${builddir}/spark-${sparkver} && \
+    rm ${builddir}/hadoop-2.10.0.tar.gz ${builddir}/spark-${sparkver}-bin-without-hadoop.tgz
+
+RUN pip3 install --default-timeout=1000 --no-cache-dir -vvv \
+    awscli awscli-plugin-endpoint boto3 \
+    setuptools pyspark pyarrow
+
+RUN git clone https://github.com/CAIDA/stardust-tools && \
+    cd stardust-tools/pyspark && python3 setup.py install
+
+COPY spark-defaults.conf ${builddir}/spark-${sparkver}/conf/
+COPY spark-env.sh ${builddir}/spark-${sparkver}/conf/
 
 # Install corsaro2 tools, just in case
 RUN git clone https://github.com/CAIDA/corsaro3 && cd corsaro3 && git checkout v2 && git submodule init && git submodule update
@@ -104,7 +124,8 @@ RUN cd corsaro3 && autoreconf -vfi && ./configure --with-slash-eight=44 --enable
 RUN rm /usr/local/bin/corsaro
 
 # Make sure Spark can find our hadoop .jars
-RUN sed -i "s@/root/@${userhome}/@" ${userhome}/spark-2.4.4/conf/spark-env.sh
+RUN sed -i "s@/root/@${builddir}/@" ${builddir}/spark-${sparkver}/conf/spark-env.sh
 
 # This will generate a random root password and start the ssh daemon
 CMD ["/usr/local/sbin/stardust-user-spark-finish.sh"]
+
