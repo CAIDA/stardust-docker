@@ -46,6 +46,19 @@ in their container once the memory limit is exceeded. If the limits are not
 specified, then the user will be able to use the full resources of their host
 VM.
 
+If your user is going to be running Spark jobs with their container, you
+will also need to specify the `sparkblockport`, `sparkdriverport`, and
+`sparkuiport` options in `/etc/dockersh.ini`. These options must be specified
+within the custom section for that user and must be unique for each user that
+is sharing a container host. For instance, if user A is using ports 5001, 5002
+and 5003 for their Spark driver, UI and block ports respectively, then user B
+should avoid using any ports in the 5001-5030 range for their own Spark ports.
+
+Users that are not using their container for running Spark jobs (e.g. are
+using the stardust-basic image) do not need to provide Spark port options and
+can safely ignore any warnings about missing Spark port configuration when they
+start their container.
+
 ### Accessing containers
 
 Once the user exists, they can reach their container simply by sshing into
