@@ -62,6 +62,7 @@ cp dockersh.ini /etc/
 # also.. it may be a bug in dockersh that it doesn't pull images.
 # in which case this can be removed
 docker pull caida/stardust-basic
+docker pull caida/stardust-spark
 
 # Create a network specifically for pushing multicast into containers
 docker network create -o "com.docker.network.driver.mtu"="9000" \
