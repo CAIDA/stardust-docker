@@ -98,6 +98,7 @@ RUN rm /usr/local/bin/corsaro
 
 # TODO replace with a wget from a public location?
 COPY stardust-user-basic-finish.sh /usr/local/sbin/
+COPY avro-tools-1.10.0.jar /usr/local/sbin/
 
 # This will generate a random root password and start the ssh daemon
 CMD ["/usr/local/sbin/stardust-user-basic-finish.sh"]
