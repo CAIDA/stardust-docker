@@ -36,7 +36,8 @@
 FROM ubuntu:bionic
 
 ARG builddir=/opt/docker-install/
-ARG sparkver=2.4.5
+ARG sparkver=3.1.2
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p ${builddir}
@@ -45,14 +46,14 @@ WORKDIR ${builddir}
 RUN apt-get -y update && apt-get -y install apt-transport-https \
                 curl lsb-release gnupg sudo wget
 
-RUN echo "deb https://dl.bintray.com/wand/general $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/wand.list
-RUN echo "deb https://dl.bintray.com/wand/libtrace $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/wand.list
+RUN wget https://apache.jfrog.io/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+RUN apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 
-RUN curl --silent "https://bintray.com/user/downloadSubjectPublicKey?username=wand" | apt-key add -
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/wand/libwandio/cfg/setup/bash.deb.sh' | bash
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/wand/libwandder/cfg/setup/bash.deb.sh' | bash
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/wand/libtrace/cfg/setup/bash.deb.sh' | bash
+RUN curl -s https://pkg.caida.org/os/ubuntu/bootstrap.sh | bash
 
-RUN echo "deb https://pkg.caida.org/os/ubuntu $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/caida.list
-
-RUN curl -so /etc/apt/trusted.gpg.d/caida.gpg https://pkg.caida.org/os/ubuntu/keyring.gpg
 
 RUN apt-get -y update && apt-get -y install \
         autoconf \
@@ -60,11 +61,13 @@ RUN apt-get -y update && apt-get -y install \
         autotools-dev \
         build-essential \
         ca-certificates \
+        cmake \
         emacs \
         git \
         grep \
         iproute2 \
         less \
+        libarrow-dev \
         libtool \
         libtrace4-tools \
         libtrace4-dev \
@@ -78,7 +81,7 @@ RUN apt-get -y update && apt-get -y install \
         pwgen \
         python3 \
         python3-pip \
-        python-swiftclient \
+        python3-swiftclient \
         screen \
         strace \
         tcpdump \
@@ -87,8 +90,9 @@ RUN apt-get -y update && apt-get -y install \
         wandio1-tools \
         && rm -rf /var/lib/apt/lists/*
 
-COPY spark-${sparkver}-bin-without-hadoop.tgz ${builddir}/
-COPY hadoop-2.10.0.tar.gz ${builddir}/
+COPY spark-${sparkver}-bin-hadoop3.2.tgz ${builddir}/
+COPY hadoop-aws-3.2.0.jar ${builddir}/
+COPY aws-java-sdk-bundle-1.11.375.jar ${builddir}/
 COPY javahome.sh /etc/profile.d/
 COPY awsconfig /root/.aws/config
 COPY stardust-user-spark-finish.sh /usr/local/sbin/
@@ -98,13 +102,15 @@ COPY README.Stardust /root/
 
 # "Install" Spark, Hadoop and awscli
 
-RUN tar -xvzf ${builddir}/spark-${sparkver}-bin-without-hadoop.tgz && \
-    tar -xvzf ${builddir}/hadoop-2.10.0.tar.gz && \
-   cp ${builddir}/hadoop-2.10.0/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar ${builddir}/spark-${sparkver}-bin-without-hadoop/jars/ && \
-    cp ${builddir}/hadoop-2.10.0/share/hadoop/tools/lib/hadoop-aws-2.10.0.jar ${builddir}/spark-${sparkver}-bin-without-hadoop/jars/ && \
-    mv ${builddir}/spark-${sparkver}-bin-without-hadoop/ ${builddir}/spark-${sparkver} && \
-    rm ${builddir}/hadoop-2.10.0.tar.gz ${builddir}/spark-${sparkver}-bin-without-hadoop.tgz
+RUN tar -xvzf ${builddir}/spark-${sparkver}-bin-hadoop3.2.tgz && \
+    mv ${builddir}/spark-${sparkver}-bin-hadoop3.2/ ${builddir}/spark-${sparkver} && \
+    rm ${builddir}/spark-${sparkver}-bin-hadoop3.2.tgz && \
+    rm ${builddir}/*.deb
 
+RUN mv ${builddir}/*.jar ${builddir}/spark-${sparkver}/jars/
+
+RUN python3 -m pip install --upgrade pip
+RUN pip3 install Cython
 RUN pip3 install --default-timeout=1000 --no-cache-dir -vvv \
     awscli awscli-plugin-endpoint boto3 \
     setuptools pyspark pyarrow
@@ -114,14 +120,6 @@ RUN git clone https://github.com/CAIDA/stardust-tools && \
 
 COPY spark-defaults.conf ${builddir}/spark-${sparkver}/conf/
 COPY spark-env.sh ${builddir}/spark-${sparkver}/conf/
-
-# Install corsaro2 tools, just in case
-RUN git clone https://github.com/CAIDA/corsaro3 && cd corsaro3 && git checkout v2 && git submodule init && git submodule update
-RUN cd corsaro3 && autoreconf -vfi && ./configure --with-slash-eight=44 --enable-debug && make && make install && ldconfig
-
-# Remove 'corsaro' binary, as we don't really want people using this to create
-# data files with a legacy format
-RUN rm /usr/local/bin/corsaro
 
 # Make sure Spark can find our hadoop .jars
 RUN sed -i "s@/root/@${builddir}/@" ${builddir}/spark-${sparkver}/conf/spark-env.sh

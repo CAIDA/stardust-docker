@@ -15,7 +15,7 @@ JOB_SCRIPT=$2
 SPARK_LOCAL_BIND_ADDR=`hostname --all-ip-addresses | cut -d " " -f 1`
 
 ${SPARK_HOME}/bin/spark-submit \
-        --packages org.apache.spark:spark-avro_2.11:2.4.5 \
+        --packages org.apache.spark:spark-avro_2.12:3.1.2 \
         --master ${SPARK_MASTER_URL} \
         --deploy-mode client \
         --conf spark.driver.port=${SPARK_DRIVER_PORT} \

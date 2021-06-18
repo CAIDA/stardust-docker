@@ -6,11 +6,12 @@ IMPORTANT:
 Before building this Docker image, you'll need to run the following (in the
 directory where the Dockerfile is located):
 
-        wget https://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-without-hadoop.tgz
-        wget https://www-us.apache.org/dist/hadoop/common/hadoop-2.10.0/hadoop-2.10.0.tar.gz
+        wget https://www-us.apache.org/dist/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz
+        wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.375/aws-java-sdk-bundle-1.11.375.jar
+        wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.2.0/hadoop-aws-3.2.0.jar
 
 wget + https + docker don't play nicely together, so it ended up being easier
-to just get docker to copy the .tgz files into the image directly.
+to just get docker to copy the .tgz and .jar files into the image directly.
 
 
 
@@ -18,5 +19,5 @@ Running a container
 ===================
 
 The user will need to update their assigned S3 access key and secret within
-/root/spark-2.4.4/conf/spark-defaults.conf before trying to use spark
+${SPARK_HOME}/conf/spark-defaults.conf before trying to use spark
 to access any Swift data files.
